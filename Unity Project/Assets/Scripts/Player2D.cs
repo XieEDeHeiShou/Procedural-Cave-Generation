@@ -1,20 +1,18 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class Player2D : MonoBehaviour {
+    private Rigidbody2D _rigidbody;
+    private Vector2 _velocity;
 
-	Rigidbody2D rigidbody;
-	Vector2 velocity;
-	
-	void Start () {
-		rigidbody = GetComponent<Rigidbody2D> ();
-	}
+    private void Start() {
+        _rigidbody = GetComponent<Rigidbody2D>();
+    }
 
-	void Update () {
-		velocity = new Vector2 (Input.GetAxisRaw ("Horizontal"), Input.GetAxisRaw ("Vertical")).normalized * 10;
-	}
+    private void Update() {
+        _velocity = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized * 10;
+    }
 
-	void FixedUpdate() {
-		rigidbody.MovePosition (rigidbody.position + velocity * Time.fixedDeltaTime);
-	}
+    private void FixedUpdate() {
+        _rigidbody.MovePosition(_rigidbody.position + _velocity * Time.fixedDeltaTime);
+    }
 }

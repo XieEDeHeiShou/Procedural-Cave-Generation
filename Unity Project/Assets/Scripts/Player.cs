@@ -1,20 +1,18 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class Player : MonoBehaviour {
+    private Rigidbody _rigidbody;
+    private Vector3 _velocity;
 
-	Rigidbody rigidbody;
-	Vector3 velocity;
-	
-	void Start () {
-		rigidbody = GetComponent<Rigidbody> ();
-	}
+    private void Start() {
+        _rigidbody = GetComponent<Rigidbody>();
+    }
 
-	void Update () {
-		velocity = new Vector3 (Input.GetAxisRaw ("Horizontal"), 0, Input.GetAxisRaw ("Vertical")).normalized * 10;
-	}
+    private void Update() {
+        _velocity = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized * 10;
+    }
 
-	void FixedUpdate() {
-		rigidbody.MovePosition (rigidbody.position + velocity * Time.fixedDeltaTime);
-	}
+    private void FixedUpdate() {
+        _rigidbody.MovePosition(_rigidbody.position + _velocity * Time.fixedDeltaTime);
+    }
 }
