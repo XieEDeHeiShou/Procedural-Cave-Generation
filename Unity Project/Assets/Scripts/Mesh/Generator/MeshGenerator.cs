@@ -38,13 +38,12 @@ namespace Mesh.Generator {
             mesh.triangles = _triangles.ToArray();
             mesh.RecalculateNormals();
 
-            var tileAmount = 10;
+            const int tileAmount = 10;
             var uvs = new Vector2[_vertices.Count];
             for (var i = 0; i < _vertices.Count; i++) {
-                var percentX = Mathf.InverseLerp(-map.GetLength(0) / 2 * squareSize, map.GetLength(0) / 2 * squareSize,
-                                   _vertices[i].x) * tileAmount;
-                var percentY = Mathf.InverseLerp(-map.GetLength(0) / 2 * squareSize, map.GetLength(0) / 2 * squareSize,
-                                   _vertices[i].z) * tileAmount;
+                var f = map.GetLength(0) * squareSize / 2;
+                var percentX = Mathf.InverseLerp(-f, f, _vertices[i].x) * tileAmount;
+                var percentY = Mathf.InverseLerp(-f, f, _vertices[i].z) * tileAmount;
                 uvs[i] = new Vector2(percentX, percentY);
             }
 
@@ -66,7 +65,7 @@ namespace Mesh.Generator {
             var wallVertices = new List<Vector3>();
             var wallTriangles = new List<int>();
             var wallMesh = new UnityEngine.Mesh();
-            float wallHeight = 5;
+            const float wallHeight = 5;
 
             foreach (var outline in _outlines)
                 for (var i = 0; i < outline.Count - 1; i++) {
