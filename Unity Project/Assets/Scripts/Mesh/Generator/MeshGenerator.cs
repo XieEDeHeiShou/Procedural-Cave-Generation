@@ -38,13 +38,12 @@ namespace Mesh.Generator {
             mesh.triangles = _triangles.ToArray();
             mesh.RecalculateNormals();
 
-            var tileAmount = 10;
+            const int tileAmount = 10;
             var uvs = new Vector2[_vertices.Count];
             for (var i = 0; i < _vertices.Count; i++) {
-                var percentX = Mathf.InverseLerp(-map.GetLength(0) / 2 * squareSize, map.GetLength(0) / 2 * squareSize,
-                                   _vertices[i].x) * tileAmount;
-                var percentY = Mathf.InverseLerp(-map.GetLength(0) / 2 * squareSize, map.GetLength(0) / 2 * squareSize,
-                                   _vertices[i].z) * tileAmount;
+                var f = map.GetLength(0) * squareSize / 2;
+                var percentX = Mathf.InverseLerp(-f, f, _vertices[i].x) * tileAmount;
+                var percentY = Mathf.InverseLerp(-f, f, _vertices[i].z) * tileAmount;
                 uvs[i] = new Vector2(percentX, percentY);
             }
 
@@ -66,7 +65,7 @@ namespace Mesh.Generator {
             var wallVertices = new List<Vector3>();
             var wallTriangles = new List<int>();
             var wallMesh = new UnityEngine.Mesh();
-            float wallHeight = 5;
+            const float wallHeight = 5;
 
             foreach (var outline in _outlines)
                 for (var i = 0; i < outline.Count - 1; i++) {
@@ -294,107 +293,6 @@ namespace Mesh.Generator {
                 }
 
             return sharedTriangleCount == 1;
-        }
-
-        private struct Triangle {
-            public readonly int vertexIndexA;
-            public readonly int vertexIndexB;
-            public readonly int vertexIndexC;
-            private readonly int[] _vertices;
-
-            public Triangle(int a, int b, int c) {
-                vertexIndexA = a;
-                vertexIndexB = b;
-                vertexIndexC = c;
-
-                _vertices = new int[3];
-                _vertices[0] = a;
-                _vertices[1] = b;
-                _vertices[2] = c;
-            }
-
-            public int this[int i] => _vertices[i];
-
-
-            public bool Contains(int vertexIndex) {
-                return vertexIndex == vertexIndexA || vertexIndex == vertexIndexB || vertexIndex == vertexIndexC;
-            }
-        }
-
-        public class SquareGrid {
-            public Square[,] squares;
-
-            public SquareGrid(int[,] map, float squareSize) {
-                var nodeCountX = map.GetLength(0);
-                var nodeCountY = map.GetLength(1);
-                var mapWidth = nodeCountX * squareSize;
-                var mapHeight = nodeCountY * squareSize;
-
-                var controlNodes = new ControlNode[nodeCountX, nodeCountY];
-
-                for (var x = 0; x < nodeCountX; x++)
-                for (var y = 0; y < nodeCountY; y++) {
-                    var pos = new Vector3(-mapWidth / 2 + x * squareSize + squareSize / 2, 0,
-                        -mapHeight / 2 + y * squareSize + squareSize / 2);
-                    controlNodes[x, y] = new ControlNode(pos, map[x, y] == 1, squareSize);
-                }
-
-                squares = new Square[nodeCountX - 1, nodeCountY - 1];
-                for (var x = 0; x < nodeCountX - 1; x++)
-                for (var y = 0; y < nodeCountY - 1; y++)
-                    squares[x, y] = new Square(controlNodes[x, y + 1], controlNodes[x + 1, y + 1],
-                        controlNodes[x + 1, y], controlNodes[x, y]);
-            }
-        }
-
-        public class Square {
-            public Node centreTop, centreRight, centreBottom, centreLeft;
-            public int configuration;
-
-            public ControlNode topLeft, topRight, bottomRight, bottomLeft;
-
-            public Square(ControlNode topLeft, ControlNode topRight, ControlNode bottomRight,
-                ControlNode bottomLeft) {
-                this.topLeft = topLeft;
-                this.topRight = topRight;
-                this.bottomRight = bottomRight;
-                this.bottomLeft = bottomLeft;
-
-                centreTop = this.topLeft.right;
-                centreRight = this.bottomRight.above;
-                centreBottom = this.bottomLeft.right;
-                centreLeft = this.bottomLeft.above;
-
-                if (this.topLeft.active)
-                    configuration += 8;
-                if (this.topRight.active)
-                    configuration += 4;
-                if (this.bottomRight.active)
-                    configuration += 2;
-                if (this.bottomLeft.active)
-                    configuration += 1;
-            }
-        }
-
-        public class Node {
-            public Vector3 position;
-            public int vertexIndex = -1;
-
-            public Node(Vector3 pos) {
-                position = pos;
-            }
-        }
-
-        public class ControlNode : Node {
-            public Node above, right;
-
-            public bool active;
-
-            public ControlNode(Vector3 pos, bool active, float squareSize) : base(pos) {
-                this.active = active;
-                above = new Node(position + Vector3.forward * squareSize / 2f);
-                right = new Node(position + Vector3.right * squareSize / 2f);
-            }
         }
     }
 }
