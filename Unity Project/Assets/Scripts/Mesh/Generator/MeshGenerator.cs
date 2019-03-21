@@ -256,11 +256,18 @@ namespace Mesh.Generator {
         }
 
         private void FollowOutline(int vertexIndex, int outlineIndex) {
-            _outlines[outlineIndex].Add(vertexIndex);
-            _checkedVertices.Add(vertexIndex);
-            var nextVertexIndex = GetConnectedOutlineVertex(vertexIndex);
+            while (true) {
+                _outlines[outlineIndex].Add(vertexIndex);
+                _checkedVertices.Add(vertexIndex);
+                var nextVertexIndex = GetConnectedOutlineVertex(vertexIndex);
 
-            if (nextVertexIndex != -1) FollowOutline(nextVertexIndex, outlineIndex);
+                if (nextVertexIndex != -1) {
+                    vertexIndex = nextVertexIndex;
+                    continue;
+                }
+
+                break;
+            }
         }
 
         private int GetConnectedOutlineVertex(int vertexIndex) {
