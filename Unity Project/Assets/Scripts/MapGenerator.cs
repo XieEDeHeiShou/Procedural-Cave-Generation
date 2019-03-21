@@ -22,11 +22,7 @@ public class MapGenerator : MonoBehaviour {
         GenerateMap();
     }
 
-    private void Update() {
-        if (Input.GetMouseButtonDown(0)) GenerateMap();
-    }
-
-    private void GenerateMap() {
+    public void GenerateMap() {
         _map = new int[width, height];
         RandomFillMap();
 
