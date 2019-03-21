@@ -3,29 +3,29 @@ using UnityEngine;
 
 namespace Mesh.Generator {
     public class MeshGenerator : MonoBehaviour {
-        private readonly HashSet<int> checkedVertices = new HashSet<int>();
-        private readonly List<List<int>> outlines = new List<List<int>>();
+        private readonly HashSet<int> _checkedVertices = new HashSet<int>();
+        private readonly List<List<int>> _outlines = new List<List<int>>();
 
-        private readonly Dictionary<int, List<Triangle>> triangleDictionary = new Dictionary<int, List<Triangle>>();
+        private readonly Dictionary<int, List<Triangle>> _triangleDictionary = new Dictionary<int, List<Triangle>>();
+        private List<int> _triangles;
+
+        private List<Vector3> _vertices;
         public MeshFilter cave;
 
         public bool is2D;
 
         public SquareGrid squareGrid;
-        private List<int> triangles;
-
-        private List<Vector3> vertices;
         public MeshFilter walls;
 
         public void GenerateMesh(int[,] map, float squareSize) {
-            triangleDictionary.Clear();
-            outlines.Clear();
-            checkedVertices.Clear();
+            _triangleDictionary.Clear();
+            _outlines.Clear();
+            _checkedVertices.Clear();
 
             squareGrid = new SquareGrid(map, squareSize);
 
-            vertices = new List<Vector3>();
-            triangles = new List<int>();
+            _vertices = new List<Vector3>();
+            _triangles = new List<int>();
 
             for (var x = 0; x < squareGrid.squares.GetLength(0); x++)
             for (var y = 0; y < squareGrid.squares.GetLength(1); y++)
@@ -34,17 +34,17 @@ namespace Mesh.Generator {
             var mesh = new UnityEngine.Mesh();
             cave.mesh = mesh;
 
-            mesh.vertices = vertices.ToArray();
-            mesh.triangles = triangles.ToArray();
+            mesh.vertices = _vertices.ToArray();
+            mesh.triangles = _triangles.ToArray();
             mesh.RecalculateNormals();
 
             var tileAmount = 10;
-            var uvs = new Vector2[vertices.Count];
-            for (var i = 0; i < vertices.Count; i++) {
+            var uvs = new Vector2[_vertices.Count];
+            for (var i = 0; i < _vertices.Count; i++) {
                 var percentX = Mathf.InverseLerp(-map.GetLength(0) / 2 * squareSize, map.GetLength(0) / 2 * squareSize,
-                                   vertices[i].x) * tileAmount;
+                                   _vertices[i].x) * tileAmount;
                 var percentY = Mathf.InverseLerp(-map.GetLength(0) / 2 * squareSize, map.GetLength(0) / 2 * squareSize,
-                                   vertices[i].z) * tileAmount;
+                                   _vertices[i].z) * tileAmount;
                 uvs[i] = new Vector2(percentX, percentY);
             }
 
@@ -68,13 +68,13 @@ namespace Mesh.Generator {
             var wallMesh = new UnityEngine.Mesh();
             float wallHeight = 5;
 
-            foreach (var outline in outlines)
+            foreach (var outline in _outlines)
                 for (var i = 0; i < outline.Count - 1; i++) {
                     var startIndex = wallVertices.Count;
-                    wallVertices.Add(vertices[outline[i]]); // left
-                    wallVertices.Add(vertices[outline[i + 1]]); // right
-                    wallVertices.Add(vertices[outline[i]] - Vector3.up * wallHeight); // bottom left
-                    wallVertices.Add(vertices[outline[i + 1]] - Vector3.up * wallHeight); // bottom right
+                    wallVertices.Add(_vertices[outline[i]]); // left
+                    wallVertices.Add(_vertices[outline[i + 1]]); // right
+                    wallVertices.Add(_vertices[outline[i]] - Vector3.up * wallHeight); // bottom left
+                    wallVertices.Add(_vertices[outline[i + 1]] - Vector3.up * wallHeight); // bottom right
 
                     wallTriangles.Add(startIndex + 0);
                     wallTriangles.Add(startIndex + 2);
@@ -99,12 +99,12 @@ namespace Mesh.Generator {
 
             CalculateMeshOutlines();
 
-            foreach (var outline in outlines) {
+            foreach (var outline in _outlines) {
                 var edgeCollider = gameObject.AddComponent<EdgeCollider2D>();
                 var edgePoints = new Vector2[outline.Count];
 
                 for (var i = 0; i < outline.Count; i++)
-                    edgePoints[i] = new Vector2(vertices[outline[i]].x, vertices[outline[i]].z);
+                    edgePoints[i] = new Vector2(_vertices[outline[i]].x, _vertices[outline[i]].z);
                 edgeCollider.points = edgePoints;
             }
         }
@@ -171,10 +171,10 @@ namespace Mesh.Generator {
                 // 4 point:
                 case 15:
                     MeshFromPoints(square.topLeft, square.topRight, square.bottomRight, square.bottomLeft);
-                    checkedVertices.Add(square.topLeft.vertexIndex);
-                    checkedVertices.Add(square.topRight.vertexIndex);
-                    checkedVertices.Add(square.bottomRight.vertexIndex);
-                    checkedVertices.Add(square.bottomLeft.vertexIndex);
+                    _checkedVertices.Add(square.topLeft.vertexIndex);
+                    _checkedVertices.Add(square.topRight.vertexIndex);
+                    _checkedVertices.Add(square.bottomRight.vertexIndex);
+                    _checkedVertices.Add(square.bottomLeft.vertexIndex);
                     break;
             }
         }
@@ -195,15 +195,15 @@ namespace Mesh.Generator {
         private void AssignVertices(Node[] points) {
             for (var i = 0; i < points.Length; i++)
                 if (points[i].vertexIndex == -1) {
-                    points[i].vertexIndex = vertices.Count;
-                    vertices.Add(points[i].position);
+                    points[i].vertexIndex = _vertices.Count;
+                    _vertices.Add(points[i].position);
                 }
         }
 
         private void CreateTriangle(Node a, Node b, Node c) {
-            triangles.Add(a.vertexIndex);
-            triangles.Add(b.vertexIndex);
-            triangles.Add(c.vertexIndex);
+            _triangles.Add(a.vertexIndex);
+            _triangles.Add(b.vertexIndex);
+            _triangles.Add(c.vertexIndex);
 
             var triangle = new Triangle(a.vertexIndex, b.vertexIndex, c.vertexIndex);
             AddTriangleToDictionary(triangle.vertexIndexA, triangle);
@@ -212,28 +212,28 @@ namespace Mesh.Generator {
         }
 
         private void AddTriangleToDictionary(int vertexIndexKey, Triangle triangle) {
-            if (triangleDictionary.ContainsKey(vertexIndexKey)) {
-                triangleDictionary[vertexIndexKey].Add(triangle);
+            if (_triangleDictionary.ContainsKey(vertexIndexKey)) {
+                _triangleDictionary[vertexIndexKey].Add(triangle);
             }
             else {
                 var triangleList = new List<Triangle>();
                 triangleList.Add(triangle);
-                triangleDictionary.Add(vertexIndexKey, triangleList);
+                _triangleDictionary.Add(vertexIndexKey, triangleList);
             }
         }
 
         private void CalculateMeshOutlines() {
-            for (var vertexIndex = 0; vertexIndex < vertices.Count; vertexIndex++)
-                if (!checkedVertices.Contains(vertexIndex)) {
+            for (var vertexIndex = 0; vertexIndex < _vertices.Count; vertexIndex++)
+                if (!_checkedVertices.Contains(vertexIndex)) {
                     var newOutlineVertex = GetConnectedOutlineVertex(vertexIndex);
                     if (newOutlineVertex != -1) {
-                        checkedVertices.Add(vertexIndex);
+                        _checkedVertices.Add(vertexIndex);
 
                         var newOutline = new List<int>();
                         newOutline.Add(vertexIndex);
-                        outlines.Add(newOutline);
-                        FollowOutline(newOutlineVertex, outlines.Count - 1);
-                        outlines[outlines.Count - 1].Add(vertexIndex);
+                        _outlines.Add(newOutline);
+                        FollowOutline(newOutlineVertex, _outlines.Count - 1);
+                        _outlines[_outlines.Count - 1].Add(vertexIndex);
                     }
                 }
 
@@ -241,40 +241,40 @@ namespace Mesh.Generator {
         }
 
         private void SimplifyMeshOutlines() {
-            for (var outlineIndex = 0; outlineIndex < outlines.Count; outlineIndex++) {
+            for (var outlineIndex = 0; outlineIndex < _outlines.Count; outlineIndex++) {
                 var simplifiedOutline = new List<int>();
                 var dirOld = Vector3.zero;
-                for (var i = 0; i < outlines[outlineIndex].Count; i++) {
-                    var p1 = vertices[outlines[outlineIndex][i]];
-                    var p2 = vertices[outlines[outlineIndex][(i + 1) % outlines[outlineIndex].Count]];
+                for (var i = 0; i < _outlines[outlineIndex].Count; i++) {
+                    var p1 = _vertices[_outlines[outlineIndex][i]];
+                    var p2 = _vertices[_outlines[outlineIndex][(i + 1) % _outlines[outlineIndex].Count]];
                     var dir = p1 - p2;
                     if (dir != dirOld) {
                         dirOld = dir;
-                        simplifiedOutline.Add(outlines[outlineIndex][i]);
+                        simplifiedOutline.Add(_outlines[outlineIndex][i]);
                     }
                 }
 
-                outlines[outlineIndex] = simplifiedOutline;
+                _outlines[outlineIndex] = simplifiedOutline;
             }
         }
 
         private void FollowOutline(int vertexIndex, int outlineIndex) {
-            outlines[outlineIndex].Add(vertexIndex);
-            checkedVertices.Add(vertexIndex);
+            _outlines[outlineIndex].Add(vertexIndex);
+            _checkedVertices.Add(vertexIndex);
             var nextVertexIndex = GetConnectedOutlineVertex(vertexIndex);
 
             if (nextVertexIndex != -1) FollowOutline(nextVertexIndex, outlineIndex);
         }
 
         private int GetConnectedOutlineVertex(int vertexIndex) {
-            var trianglesContainingVertex = triangleDictionary[vertexIndex];
+            var trianglesContainingVertex = _triangleDictionary[vertexIndex];
 
             for (var i = 0; i < trianglesContainingVertex.Count; i++) {
                 var triangle = trianglesContainingVertex[i];
 
                 for (var j = 0; j < 3; j++) {
                     var vertexB = triangle[j];
-                    if (vertexB != vertexIndex && !checkedVertices.Contains(vertexB))
+                    if (vertexB != vertexIndex && !_checkedVertices.Contains(vertexB))
                         if (IsOutlineEdge(vertexIndex, vertexB))
                             return vertexB;
                 }
@@ -284,7 +284,7 @@ namespace Mesh.Generator {
         }
 
         private bool IsOutlineEdge(int vertexA, int vertexB) {
-            var trianglesContainingVertexA = triangleDictionary[vertexA];
+            var trianglesContainingVertexA = _triangleDictionary[vertexA];
             var sharedTriangleCount = 0;
 
             for (var i = 0; i < trianglesContainingVertexA.Count; i++)
@@ -300,20 +300,20 @@ namespace Mesh.Generator {
             public readonly int vertexIndexA;
             public readonly int vertexIndexB;
             public readonly int vertexIndexC;
-            private readonly int[] vertices;
+            private readonly int[] _vertices;
 
             public Triangle(int a, int b, int c) {
                 vertexIndexA = a;
                 vertexIndexB = b;
                 vertexIndexC = c;
 
-                vertices = new int[3];
-                vertices[0] = a;
-                vertices[1] = b;
-                vertices[2] = c;
+                _vertices = new int[3];
+                _vertices[0] = a;
+                _vertices[1] = b;
+                _vertices[2] = c;
             }
 
-            public int this[int i] => vertices[i];
+            public int this[int i] => _vertices[i];
 
 
             public bool Contains(int vertexIndex) {
@@ -353,25 +353,25 @@ namespace Mesh.Generator {
 
             public ControlNode topLeft, topRight, bottomRight, bottomLeft;
 
-            public Square(ControlNode _topLeft, ControlNode _topRight, ControlNode _bottomRight,
-                ControlNode _bottomLeft) {
-                topLeft = _topLeft;
-                topRight = _topRight;
-                bottomRight = _bottomRight;
-                bottomLeft = _bottomLeft;
+            public Square(ControlNode topLeft, ControlNode topRight, ControlNode bottomRight,
+                ControlNode bottomLeft) {
+                this.topLeft = topLeft;
+                this.topRight = topRight;
+                this.bottomRight = bottomRight;
+                this.bottomLeft = bottomLeft;
 
-                centreTop = topLeft.right;
-                centreRight = bottomRight.above;
-                centreBottom = bottomLeft.right;
-                centreLeft = bottomLeft.above;
+                centreTop = this.topLeft.right;
+                centreRight = this.bottomRight.above;
+                centreBottom = this.bottomLeft.right;
+                centreLeft = this.bottomLeft.above;
 
-                if (topLeft.active)
+                if (this.topLeft.active)
                     configuration += 8;
-                if (topRight.active)
+                if (this.topRight.active)
                     configuration += 4;
-                if (bottomRight.active)
+                if (this.bottomRight.active)
                     configuration += 2;
-                if (bottomLeft.active)
+                if (this.bottomLeft.active)
                     configuration += 1;
             }
         }
@@ -380,8 +380,8 @@ namespace Mesh.Generator {
             public Vector3 position;
             public int vertexIndex = -1;
 
-            public Node(Vector3 _pos) {
-                position = _pos;
+            public Node(Vector3 pos) {
+                position = pos;
             }
         }
 
@@ -390,8 +390,8 @@ namespace Mesh.Generator {
 
             public bool active;
 
-            public ControlNode(Vector3 _pos, bool _active, float squareSize) : base(_pos) {
-                active = _active;
+            public ControlNode(Vector3 pos, bool active, float squareSize) : base(pos) {
+                this.active = active;
                 above = new Node(position + Vector3.forward * squareSize / 2f);
                 right = new Node(position + Vector3.right * squareSize / 2f);
             }
