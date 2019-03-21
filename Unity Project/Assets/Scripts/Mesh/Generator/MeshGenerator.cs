@@ -375,15 +375,6 @@ namespace Mesh.Generator {
             }
         }
 
-        public class Node {
-            public Vector3 position;
-            public int vertexIndex = -1;
-
-            public Node(Vector3 pos) {
-                position = pos;
-            }
-        }
-
         public class ControlNode : Node {
             public Node above, right;
 
