@@ -193,7 +193,7 @@ namespace Mesh.Generator {
                 CreateTriangle(points[0], points[4], points[5]);
         }
 
-        private void AssignVertices(Node[] points) {
+        private void AssignVertices(IEnumerable<Node> points) {
             foreach (var item in points)
                 if (item.vertexIndex == -1) {
                     item.vertexIndex = _vertices.Count;
@@ -217,8 +217,7 @@ namespace Mesh.Generator {
                 _triangleDictionary[vertexIndexKey].Add(triangle);
             }
             else {
-                var triangleList = new List<Triangle>();
-                triangleList.Add(triangle);
+                var triangleList = new List<Triangle> {triangle};
                 _triangleDictionary.Add(vertexIndexKey, triangleList);
             }
         }
@@ -227,15 +226,13 @@ namespace Mesh.Generator {
             for (var vertexIndex = 0; vertexIndex < _vertices.Count; vertexIndex++)
                 if (!_checkedVertices.Contains(vertexIndex)) {
                     var newOutlineVertex = GetConnectedOutlineVertex(vertexIndex);
-                    if (newOutlineVertex != -1) {
-                        _checkedVertices.Add(vertexIndex);
+                    if (newOutlineVertex == -1) continue;
+                    _checkedVertices.Add(vertexIndex);
 
-                        var newOutline = new List<int>();
-                        newOutline.Add(vertexIndex);
-                        _outlines.Add(newOutline);
-                        FollowOutline(newOutlineVertex, _outlines.Count - 1);
-                        _outlines[_outlines.Count - 1].Add(vertexIndex);
-                    }
+                    var newOutline = new List<int> {vertexIndex};
+                    _outlines.Add(newOutline);
+                    FollowOutline(newOutlineVertex, _outlines.Count - 1);
+                    _outlines[_outlines.Count - 1].Add(vertexIndex);
                 }
 
             SimplifyMeshOutlines();
@@ -249,10 +246,9 @@ namespace Mesh.Generator {
                     var p1 = _vertices[_outlines[outlineIndex][i]];
                     var p2 = _vertices[_outlines[outlineIndex][(i + 1) % _outlines[outlineIndex].Count]];
                     var dir = p1 - p2;
-                    if (dir != dirOld) {
-                        dirOld = dir;
-                        simplifiedOutline.Add(_outlines[outlineIndex][i]);
-                    }
+                    if (dir == dirOld) continue;
+                    dirOld = dir;
+                    simplifiedOutline.Add(_outlines[outlineIndex][i]);
                 }
 
                 _outlines[outlineIndex] = simplifiedOutline;
@@ -273,9 +269,9 @@ namespace Mesh.Generator {
             foreach (var triangle in trianglesContainingVertex)
                 for (var j = 0; j < 3; j++) {
                     var vertexB = triangle[j];
-                    if (vertexB != vertexIndex && !_checkedVertices.Contains(vertexB))
-                        if (IsOutlineEdge(vertexIndex, vertexB))
-                            return vertexB;
+                    if (vertexB == vertexIndex || _checkedVertices.Contains(vertexB)) continue;
+                    if (IsOutlineEdge(vertexIndex, vertexB))
+                        return vertexB;
                 }
 
             return -1;
