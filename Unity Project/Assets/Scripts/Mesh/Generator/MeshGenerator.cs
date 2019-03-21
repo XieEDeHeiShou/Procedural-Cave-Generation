@@ -94,7 +94,8 @@ namespace Mesh.Generator {
 
         private void Generate2DColliders() {
             var currentColliders = gameObject.GetComponents<EdgeCollider2D>();
-            for (var i = 0; i < currentColliders.Length; i++) Destroy(currentColliders[i]);
+            foreach (var item in currentColliders)
+                Destroy(item);
 
             CalculateMeshOutlines();
 
@@ -110,7 +111,8 @@ namespace Mesh.Generator {
 
         private void TriangulateSquare(Square square) {
             switch (square.configuration) {
-                case 0:
+                // ReSharper disable once RedundantEmptySwitchSection  High frequency context
+                default:
                     break;
 
                 // 1 points:
@@ -192,10 +194,10 @@ namespace Mesh.Generator {
         }
 
         private void AssignVertices(Node[] points) {
-            for (var i = 0; i < points.Length; i++)
-                if (points[i].vertexIndex == -1) {
-                    points[i].vertexIndex = _vertices.Count;
-                    _vertices.Add(points[i].position);
+            foreach (var item in points)
+                if (item.vertexIndex == -1) {
+                    item.vertexIndex = _vertices.Count;
+                    _vertices.Add(item.position);
                 }
         }
 
@@ -268,16 +270,13 @@ namespace Mesh.Generator {
         private int GetConnectedOutlineVertex(int vertexIndex) {
             var trianglesContainingVertex = _triangleDictionary[vertexIndex];
 
-            for (var i = 0; i < trianglesContainingVertex.Count; i++) {
-                var triangle = trianglesContainingVertex[i];
-
+            foreach (var triangle in trianglesContainingVertex)
                 for (var j = 0; j < 3; j++) {
                     var vertexB = triangle[j];
                     if (vertexB != vertexIndex && !_checkedVertices.Contains(vertexB))
                         if (IsOutlineEdge(vertexIndex, vertexB))
                             return vertexB;
                 }
-            }
 
             return -1;
         }
