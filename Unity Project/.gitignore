@@ -21,3 +21,4 @@ sysinfo.txt
 
 # IDEA 
 .idea
+*.DotSettings
