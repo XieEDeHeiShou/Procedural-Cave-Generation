@@ -7,8 +7,8 @@ using Random = System.Random;
 
 namespace Map.Generator {
     public class MapGenerator : MonoBehaviour {
-        private const int SpaceForRoom = 0;
-        private const int SpaceForWall = 1;
+        private const int Room = 0;
+        private const int Wall = 1;
 
         private int[,] _map;
         public int height;
@@ -40,34 +40,36 @@ namespace Map.Generator {
                 if (x >= borderSize && x < width + borderSize && y >= borderSize && y < height + borderSize)
                     borderedMap[x, y] = _map[x - borderSize, y - borderSize];
                 else
-                    borderedMap[x, y] = 1;
+                    borderedMap[x, y] = Wall;
 
             var meshGen = GetComponent<MeshGenerator>();
             meshGen.GenerateMesh(borderedMap, 1);
         }
 
         private void ProcessMap() {
-            var wallRegions = GetRegions(1);
+            var wallRegions = GetRegions(Wall);
             const int wallThresholdSize = 50;
 
             foreach (var wallRegion in wallRegions) {
                 if (wallRegion.Count >= wallThresholdSize) continue;
-                foreach (var tile in wallRegion) _map[tile.tileX, tile.tileY] = 0;
+                // if the wall is smaller than threshold, replace it to room
+                foreach (var tile in wallRegion) _map[tile.tileX, tile.tileY] = Room;
             }
 
-            var roomRegions = GetRegions(0);
+            var roomRegions = GetRegions(Room);
             const int roomThresholdSize = 50;
             var survivingRooms = new List<Room>();
 
             foreach (var roomRegion in roomRegions)
                 if (roomRegion.Count < roomThresholdSize)
+                    // clear small room
                     foreach (var tile in roomRegion)
-                        _map[tile.tileX, tile.tileY] = 1;
+                        _map[tile.tileX, tile.tileY] = Wall;
                 else
                     survivingRooms.Add(new Room(roomRegion, _map));
 
             survivingRooms.Sort();
-            survivingRooms[0].isAccessibleFromMainRoom = true;
+            survivingRooms[0].isAccessibleFromMainRoom = true; // mark the biggest room as main room
 
             ConnectClosestRooms(survivingRooms);
         }
@@ -141,7 +143,7 @@ namespace Map.Generator {
         }
 
         private void CreatePassage(Room roomA, Room roomB, Coordinate tileA, Coordinate tileB) {
-            Room.ConnectRooms(roomA, roomB);
+            Generator.Room.ConnectRooms(roomA, roomB);
 
             var line = GetLine(tileA, tileB);
             foreach (var c in line) DrawCircle(c, 5);
@@ -153,7 +155,7 @@ namespace Map.Generator {
                 if (x * x + y * y > r * r) continue;
                 var drawX = c.tileX + x;
                 var drawY = c.tileY + y;
-                if (IsInMapRange(drawX, drawY)) _map[drawX, drawY] = 0;
+                if (IsInMapRange(drawX, drawY)) _map[drawX, drawY] = Room;
             }
         }
 
@@ -221,6 +223,7 @@ namespace Map.Generator {
         }
 
         private List<Coordinate> GetRegionTiles(int startX, int startY) {
+            // Flow field
             var tiles = new List<Coordinate>();
             var mapFlags = new int[width, height];
             var tileType = _map[startX, startY];
@@ -261,9 +264,9 @@ namespace Map.Generator {
             for (var x = 0; x < width; x++)
             for (var y = 0; y < height; y++)
                 if (x == 0 || x == width - 1 || y == 0 || y == height - 1)
-                    _map[x, y] = 1;
+                    _map[x, y] = Wall; // border wall
                 else
-                    _map[x, y] = pseudoRandom.Next(0, 100) < randomFillPercent ? 1 : 0;
+                    _map[x, y] = pseudoRandom.Next(0, 100) < randomFillPercent ? Wall : Room;
         }
 
         /// <summary>
@@ -275,9 +278,11 @@ namespace Map.Generator {
                 var neighbourWallTiles = GetSurroundingWallCount(x, y);
 
                 if (neighbourWallTiles > 4)
-                    _map[x, y] = 1;
+                    // this place is surrounded by more than 4 wall
+                    // replace it to Wall to smooth the edge 
+                    _map[x, y] = Wall;
                 else if (neighbourWallTiles < 4)
-                    _map[x, y] = 0;
+                    _map[x, y] = Room;
             }
         }
 
